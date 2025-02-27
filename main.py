@@ -8,6 +8,7 @@ Nilusink
 """
 import matplotlib.pyplot as plt
 import pandas as pd
+import platform
 import sqlite3
 import os
 
@@ -31,7 +32,19 @@ APPLICATIONS: list[str] = [
 
 
 # database connection
-conn = sqlite3.connect(f"{os.getenv('HOME')}/.local/share/whatpulse.db")
+if platform.system() == "Linux":
+    db_path = f"{os.getenv('HOME')}/.local/share/whatpulse.db"
+
+elif platform.system() == "Windows":
+    db_path = r"%LOCALAPPDATA%\WhatPulse\whatpulse.db"
+
+elif platform.system() == "Darwin": # macos
+    db_path = "~/Library/Application Support/WhatPulse/"
+
+else:
+    raise RuntimeError("Unsupported platform")
+
+conn = sqlite3.connect(db_path)
 
 # Plot data
 plt.figure(figsize=(10, 5))
@@ -41,7 +54,6 @@ for application in APPLICATIONS:
     # load data into Pandas
     query = f"SELECT day, hour, seconds_active FROM application_active_hour WHERE path LIKE '%{application}%';"  # " WHERE path like '%firefox%'"
     df = pd.read_sql_query(query, conn)
-    conn.close()
 
     # Convert date column to datetime
     df['day'] = pd.to_datetime(df['day'])
@@ -53,6 +65,8 @@ for application in APPLICATIONS:
 
     # plot application
     plt.plot(df['datetime'], df['total_hours'], linestyle='-', label=application.capitalize())
+
+conn.close()
 
 # Labels and title
 plt.xlabel("Date")
