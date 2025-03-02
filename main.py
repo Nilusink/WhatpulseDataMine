@@ -15,30 +15,36 @@ import os
 # selected applications
 APPLICATIONS: list[str] = [
     "pycharm",
-#    "firefox",
-#    "chromium",
     "Mindustry",
     "code",
-#    "minecraft",
-    "rawtherapee",
-    "joplin",
-#    "balena-etcher",
-    "googleearth",
-    "PacketTracer",
     "Discord",
     "spotify",
-    "DesktopEditors"
+    "DesktopEditors",
+    "minecraft",
+    "firefox"
 ]
 
 
 # database connection
 if platform.system() == "Linux":
     db_path = f"{os.getenv('HOME')}/.local/share/whatpulse.db"
+    APPLICATIONS.extend([
+        "rawtherapee",
+        "joplin",
+        "googleearth",
+        "PacketTracer",
+    ])
 
 elif platform.system() == "Windows":
-    db_path = r"%LOCALAPPDATA%\WhatPulse\whatpulse.db"
+    db_path = fr"{os.getenv('LOCALAPPDATA')}\WhatPulse\whatpulse.db"
+    APPLICATIONS.extend([
+        "dcs",
+        "cities",
+        "GTA5",
+        "neonabyss"
+    ])
 
-elif platform.system() == "Darwin": # macos
+elif platform.system() == "Darwin":   # macos
     db_path = "~/Library/Application Support/WhatPulse/"
 
 else:
@@ -64,7 +70,12 @@ for application in APPLICATIONS:
     df['total_hours'] = df['hours_active'].cumsum()
 
     # plot application
-    plt.plot(df['datetime'], df['total_hours'], linestyle='-', label=application.capitalize())
+    plt.plot(
+        df['datetime'],
+        df['total_hours'],
+        linestyle='-',
+        label=f"{application.capitalize()} ({df['total_hours']} Hours)"
+    )
 
 conn.close()
 
