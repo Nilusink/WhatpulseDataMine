@@ -13,6 +13,7 @@ import platform
 import sqlite3
 import os
 
+
 # selected applications
 APPLICATIONS: list[str | tuple[str, str]] = [
     "pycharm",
@@ -22,16 +23,16 @@ APPLICATIONS: list[str | tuple[str, str]] = [
     "spotify",
     ("DesktopEditors", "OnlyOffice Desktop"),
     "firefox",
+    ("googleearth", "Google Earth"),
 ]
 
 
-# database connection
+# system specific changes
 if platform.system() == "Linux":
     db_path = f"{os.getenv('HOME')}/.local/share/whatpulse.db"
     APPLICATIONS.extend([
         ("rawtherapee", "RawTherapee"),
         "joplin",
-        ("googleearth", "Google Earth (pro)"),
         ("PacketTracer", "Packet Tracer"),
         "minecraft",
     ])
@@ -100,13 +101,17 @@ for application in APPLICATIONS:
         }])
     ], ignore_index=True)
 
-    # plot application
+    # format cumulative played hours
     if total_hours > 1:
         total_time = f"({total_hours:.1f} Hours)"
 
-    else:
+    elif total_hours > 1/60:
         total_time = f"({total_hours*60:.0f} Minutes)"
 
+    else:  # skip if application has less then 1 minute active time
+        continue
+
+    # plot application
     plt.plot(
         df['datetime'],
         df['total_hours'],
