@@ -6,12 +6,20 @@ Displays a usage Graph for WhatPulse Applications (locally)
 Author:
 Nilusink
 """
+import matplotlib.colors as mcolors
 import matplotlib.pyplot as plt
 from datetime import datetime
+from random import random
+import matplotlib as mp
 import pandas as pd
+import numpy as np
 import platform
 import sqlite3
 import os
+
+
+# settings
+PRINT_INFO: bool = False
 
 
 # selected applications
@@ -44,6 +52,13 @@ elif platform.system() == "Windows":
         ("cities", "Cities Skylines"),
         ("GTA5", "GTA V"),
         ("neonabyss", "NeonAbyss"),
+        ("winword.exe", "MS Word"),
+        ("x2.exe", "Altium Designer"),
+        ("texstudio.exe", "Tex Studio"),
+        "quartus",
+        ("psoc_creator.exe", "PSOC Creator"),
+        "timberborn",
+        ("explorer.exe", "Explorer"),
     ])
 
 elif platform.system() == "Darwin":   # macos
@@ -63,6 +78,7 @@ plt.figure(figsize=(10, 5))
 
 # graph each application
 total_times = []
+plot_datas = []
 for application in APPLICATIONS:
     # check for given name
     if isinstance(application, tuple):
@@ -81,7 +97,7 @@ for application in APPLICATIONS:
     # Convert date column to datetime
     df['day'] = pd.to_datetime(df['day'])
     df['datetime'] = pd.to_datetime(
-        df['day'].astype(str) + ' ' + df['hour'].astype(str)
+        df['day'].astype(str) + ' ' + df['hour'].astype(str) + ':00'
     )
 
     # convert column to cumulative hours
@@ -89,7 +105,15 @@ for application in APPLICATIONS:
     df['total_hours'] = df['hours_active'].cumsum()
 
     # get total hours (last entry)
-    total_hours = df['total_hours'].iat[-1]
+    try:
+        total_hours = df['total_hours'].iat[-1]
+
+    except IndexError:  # no data
+        if PRINT_INFO:
+            print(f"No data for {name}")
+
+        continue
+
     total_times.append(total_hours)
 
     # add "now" with last total_hours
@@ -109,20 +133,38 @@ for application in APPLICATIONS:
         total_time = f"({total_hours*60:.0f} Minutes)"
 
     else:  # skip if application has less then 1 minute active time
+        if PRINT_INFO:
+            print(f"Application {name} has less then 1 minute active time")
+
         continue
 
-    # plot application
+    plot_datas.append((df, name, total_time))
+
+
+# graph stuff
+cmap = mp.colormaps["turbo"]
+
+# Generate evenly spaced colors
+colors = [cmap(i / (len(plot_datas) - 1)) for i in range(len(plot_datas))]
+
+# Shuffle colors for randomness
+np.random.shuffle(colors)
+
+# plot graphs
+for i, data in enumerate(plot_datas):
+    df, name, total_time = data
+
     plt.plot(
         df['datetime'],
         df['total_hours'],
         linestyle='-',
-        label=f"{name} {total_time}"
+        label=f"{name} {total_time}",
+        color=colors[i]
     )
 
 
 # close database connection
 conn.close()
-
 
 # Labels and title
 plt.xlabel("Date")
